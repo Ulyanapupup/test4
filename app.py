@@ -3,6 +3,9 @@ eventlet.monkey_patch()
 
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, send
+from game_logic import mode_1_1
+from game_logic import mode_1_2
+
 import os
 
 # Импортируем логику
@@ -24,9 +27,14 @@ def room_setup():
 
 @app.route('/game/<mode>')
 def game_mode(mode):
-    if mode in ['2.1', '2.2']:
+    if mode == '1.1':
+        return render_template('game_mode_1_1.html')
+    elif mode == '1.2':
+        return render_template('game_mode_1_2.html')
+    elif mode in ['2.1', '2.2']:
         return render_template('room_setup.html', mode=mode)
-    return render_template('game_mode.html', mode=mode)
+    else:
+        return "Неизвестный режим", 404
 
 
 @app.route('/game')
@@ -36,6 +44,17 @@ def game():
         return "Ошибка: не указан код комнаты", 400
     return render_template('game.html', room_code=room_code)
 
+@app.route('/start_1_2', methods=['POST'])
+def start_1_2():
+    mode_1_2.reset()
+    q = mode_1_2.next_question()
+    return jsonify({"question": q})
+
+@app.route('/answer_1_2', methods=['POST'])
+def answer_1_2():
+    answer = request.json.get("answer", "")
+    response, done = mode_1_2.process_answer(answer)
+    return jsonify({"response": response, "done": done})
 
 @app.route('/ask', methods=['POST'])
 def ask():
